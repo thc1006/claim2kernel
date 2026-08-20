@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://claim2kernel.dev/schemas/rzf-benchmark-v1.json",
+  "title": "Claim2Kernel RZF benchmark raw output v1",
+  "description": "Raw, per-sample RZF benchmark evidence emitted by kernels/host/bench_rzf.py. GPU phases (kernel/h2d/d2h) are device-event measured; host phases use CLOCK_MONOTONIC_RAW. Tail quantiles are null unless enough samples were retained. The companion CSV has columns: evidence,backend,shape,phase,unit,sample_index,value.",
+  "type": "object",
+  "required": ["schema", "honesty", "host", "gpus", "compile", "gpuCases", "cpuBaselineCases"],
+  "additionalProperties": true,
+  "properties": {
+    "schema": {"const": "claim2kernel.dev/rzf-benchmark-v1"},
+    "generatedWith": {"type": "string"},
+    "honesty": {
+      "type": "object",
+      "required": ["gpuPhasesFrom", "hostPhasesFrom", "syntheticCpuAsGpu", "tailQuantilesRequireSamples"],
+      "properties": {
+        "gpuPhasesFrom": {"const": "device events only"},
+        "hostPhasesFrom": {"const": "CLOCK_MONOTONIC_RAW"},
+        "syntheticCpuAsGpu": {"const": false},
+        "tailQuantilesRequireSamples": {
+          "type": "object",
+          "required": ["p99", "p999"],
+          "properties": {"p99": {"type": "integer"}, "p999": {"type": "integer"}}
+        }
+      }
+    },
+    "host": {
+      "type": "object",
+      "required": ["python", "platform", "numpy"],
+      "properties": {
+        "python": {"type": "string"},
+        "platform": {"type": "string"},
+        "numpy": {"type": "string"}
+      }
+    },
+    "gpus": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "uuid": {"type": "string"},
+          "computeCap": {"type": "string"},
+          "driver": {"type": "string"},
+          "memoryTotal": {"type": "string"}
+        }
+      }
+    },
+    "compile": {
+      "type": "object",
+      "description": "One-shot backend build time, or a NOT RUN status. Not a latency distribution.",
+      "properties": {
+        "command": {"type": "string"},
+        "seconds": {"type": "number"},
+        "returncode": {"type": "integer"},
+        "ok": {"type": "boolean"},
+        "status": {"type": "string"}
+      }
+    },
+    "gpuCases": {"type": "array", "items": {"$ref": "#/$defs/gpuCase"}},
+    "cpuBaselineCases": {"type": "array", "items": {"$ref": "#/$defs/case"}}
+  },
+  "$defs": {
+    "phaseSummary": {
+      "type": "object",
+      "description": "Either a populated distribution or a NOT RUN status. p99/p999 are null (with a *Note) when too few samples were retained; a single best value is never reported as a tail quantile.",
+      "properties": {
+        "count": {"type": "integer", "minimum": 0},
+        "unit": {"type": "string", "enum": ["us", "ms", "ns", "s"]},
+        "min": {"type": "number"},
+        "max": {"type": "number"},
+        "mean": {"type": "number"},
+        "stddev": {"type": "number"},
+        "p50": {"type": "number"},
+        "p95": {"type": "number"},
+        "p99": {"type": ["number", "null"]},
+        "p999": {"type": ["number", "null"]},
+        "p99Note": {"type": "string"},
+        "p999Note": {"type": "string"},
+        "source": {"type": "string"},
+        "status": {"type": "string"},
+        "raw": {"type": "array", "items": {"type": "number"}}
+      }
+    },
+    "phases": {
+      "type": "object",
+      "properties": {
+        "kernel": {"$ref": "#/$defs/phaseSummary"},
+        "h2d": {"$ref": "#/$defs/phaseSummary"},
+        "d2h": {"$ref": "#/$defs/phaseSummary"},
+        "end_to_end": {"$ref": "#/$defs/phaseSummary"}
+      }
+    },
+    "case": {
+      "type": "object",
+      "required": ["shape"],
+      "properties": {
+        "shape": {"type": "array", "items": {"type": "integer"}, "minItems": 3, "maxItems": 3},
+        "evidenceType": {"type": "string"},
+        "notGPU": {"type": "boolean"},
+        "precision": {"type": "string"},
+        "reps": {"type": "integer"},
+        "warmup": {"type": "integer"},
+        "phases": {"$ref": "#/$defs/phases"}
+      }
+    },
+    "gpuCase": {
+      "type": "object",
+      "required": ["shape"],
+      "properties": {
+        "shape": {"type": "array", "items": {"type": "integer"}, "minItems": 3, "maxItems": 3},
+        "alpha": {"type": "number"},
+        "reps": {"type": "integer"},
+        "warmup": {"type": "integer"},
+        "backend": {"type": "string"},
+        "library": {"type": "string"},
+        "workspaceBytes": {"type": "integer"},
+        "coldStart": {"type": "object"},
+        "deadlineUS": {"type": ["number", "null"]},
+        "deadlineMissRatio": {"type": ["number", "null"]},
+        "status": {"type": "string"},
+        "phases": {"$ref": "#/$defs/phases"}
+      }
+    }
+  }
+}
