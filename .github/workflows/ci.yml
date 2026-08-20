@@ -8,38 +8,106 @@ on:
 permissions:
   contents: read
 
+# One in-flight run per ref. New pushes to a PR cancel the now-obsolete run so
+# runners are freed instead of doubled up; main pushes are never cancelled.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  validate:
+  # Each job lands on its own 4-vCPU runner, so the suites run fully in parallel
+  # and wall-clock collapses to the slowest job rather than their sum.
+  go:
+    name: go (build, vet, race, fuzz)
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
-          go-version: 1.26.5
-          cache: false
-      - uses: actions/setup-python@v5
+          go-version: '1.26.5'
+          cache: true
+      - run: go build ./...
+      - run: go vet ./...
+      - name: go test -race
+        run: go test -race -count=1 ./...   # packages run in parallel across all cores
+      - name: fuzz smoke
+        run: |
+          go test ./pkg/jsonsafe -run '^$' -fuzz FuzzDecodeStrict -fuzztime 5s
+          go test ./pkg/dra -run '^$' -fuzz FuzzDecodeMetadataStream -fuzztime 5s
+
+  python:
+    name: python (unit, schema, oracle)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
-          python-version: "3.13"
+          python-version: '3.13'
           cache: pip
           cache-dependency-path: tools/calibration/requirements-dev.txt
-      - name: Install system tools
-        run: sudo apt-get update && sudo apt-get install -y jq rsync zip
-      - name: Install Python dependencies
-        run: python -m pip install --requirement tools/calibration/requirements-dev.txt
-      - name: Schema examples
-        run: python tools/schema_check.py
-      - name: Full release validation
-        run: ./scripts/validate_release.sh
-      - name: Check source package
-        run: ./scripts/package.sh
-      - name: Upload validation report
-        if: always()
-        uses: actions/upload-artifact@v4
+      - run: python -m pip install --requirement tools/calibration/requirements-dev.txt
+      - name: python unit tests
+        run: PYTHONPATH=tools/calibration python -m unittest discover -s tools/calibration/tests -v
+      - run: python -m compileall -q tools kernels/rzf
+      - run: python tools/schema_check.py
+      - run: python kernels/rzf/rzf_reference.py --self-test
+
+  integration:
+    name: integration (demo, adversarial, calibrate)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
-          name: validation-report
-          path: |
-            VALIDATION_REPORT.md
-            artifacts/validation/full.log
-            artifacts/adversarial-results.tsv
+          go-version: '1.26.5'
+          cache: true
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: tools/calibration/requirements-dev.txt
+      - run: python -m pip install --requirement tools/calibration/requirements-dev.txt
+      - name: install system tools
+        run: sudo apt-get update && sudo apt-get install -y jq
+      - run: ./scripts/run_demo.sh
+      - run: ./scripts/adversarial_suite.sh
+      - run: ./scripts/calibrate_smoke.sh
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: adversarial-results
+          path: artifacts/adversarial-results.tsv
           if-no-files-found: warn
+
+  package:
+    name: package (source archive)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.26.5'
+          cache: true
+      - name: install system tools
+        run: sudo apt-get update && sudo apt-get install -y jq rsync zip
+      - run: ./scripts/package.sh
+
+  container:
+    name: container (distroless image build)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - name: docker build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: claim2kernel:ci
