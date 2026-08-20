@@ -1,0 +1,97 @@
+name: mojo-build
+
+# Hosted Mojo cross-compilation. Compiling a GPU kernel to a target's PTX/GCN
+# needs the toolchain but NOT the physical GPU, so every PR that touches Mojo can
+# be checked on a standard runner. Actual on-device execution + measurements live
+# in mojo-hardware.yml (self-hosted, manual). No performance is claimed here.
+
+on:
+  pull_request:
+    paths:
+      - 'kernels/mojo/**'
+      - 'kernels/include/**'
+      - 'scripts/check_mojo_version.py'
+      - '.github/workflows/mojo-build.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'kernels/mojo/**'
+      - 'kernels/include/**'
+      - 'scripts/check_mojo_version.py'
+      - '.github/workflows/mojo-build.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mojo-build-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  cross-compile:
+    name: cross-compile (sm_90, sm_80, gfx942)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PIXI_HOME: ${{ github.workspace }}/.pixi-home
+    steps:
+      - uses: actions/checkout@v7
+
+      # The MAX toolchain env (~GB) is cached whole; only the first miss pays the
+      # download. Bump the key suffix when the pinned MAX version changes.
+      - name: Restore Mojo/MAX toolchain
+        id: toolchain
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.PIXI_HOME }}
+          key: mojo-max-26.5-linux64-v1
+
+      - name: Install Mojo (MAX) via pixi
+        if: steps.toolchain.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          curl -fsSL https://pixi.sh/install.sh | bash
+          PIXI="$PIXI_HOME/bin/pixi"
+          for attempt in 1 2 3; do
+            "$PIXI" global install -c https://conda.modular.com/max -c conda-forge max && break
+            echo "install attempt $attempt failed; retrying" && sleep 10
+          done
+          test -x "$PIXI_HOME/envs/max/bin/mojo"
+
+      - name: Configure toolchain on PATH
+        run: |
+          echo "$PIXI_HOME/envs/max/bin" >> "$GITHUB_PATH"
+          echo "MODULAR_HOME=$PIXI_HOME/envs/max/share/max" >> "$GITHUB_ENV"
+
+      - name: Verify pinned Mojo version
+        run: |
+          mojo --version
+          python3 scripts/check_mojo_version.py "$(mojo --version)"
+
+      - name: Cross-compile GPU conformance probe for each target
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/mojo
+          for target in nvidia:sm_90 nvidia:sm_80 amdgpu:gfx942; do
+            safe="${target/:/_}"
+            echo "::group::$target"
+            mojo build --warn-on-unstable-apis --target-accelerator "$target" \
+              kernels/mojo/gpu_conformance.mojo -o "artifacts/mojo/gpu-conformance-$safe"
+            echo "::endgroup::"
+          done
+
+      - name: Build C ABI shared library
+        run: |
+          mojo build --warn-on-unstable-apis --emit shared-lib \
+            kernels/mojo/contract_exports.mojo -o artifacts/mojo/libc2k_contract.so
+
+      - name: Record build digests
+        run: |
+          find artifacts/mojo -type f -print0 | sort -z | xargs -0 sha256sum \
+            | tee artifacts/mojo/BUILD-MANIFEST.sha256
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mojo-cross-compiled
+          path: artifacts/mojo
+          if-no-files-found: error
