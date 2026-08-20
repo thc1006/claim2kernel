@@ -1,0 +1,11 @@
+/dist/
+/artifacts/*
+!/artifacts/.gitkeep
+*.pem
+*.key
+*.sig.json
+__pycache__/
+*.pyc
+.coverage
+.pytest_cache/
+.DS_Store

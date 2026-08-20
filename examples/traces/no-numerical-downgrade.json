@@ -1,0 +1,28 @@
+{
+  "events": [
+    {
+      "type": "publish",
+      "profile": "p",
+      "contractDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "artifactDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "deviceFingerprint": "cpu/x86_64/1",
+      "precision": "fp64",
+      "numericalUpperBound": 0
+    },
+    {
+      "type": "admit",
+      "profile": "p",
+      "request": "r",
+      "numericalBudget": 0
+    },
+    {
+      "type": "dispatch",
+      "request": "r",
+      "contractDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "artifactDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "deviceFingerprint": "cpu/x86_64/1",
+      "precision": "fp16",
+      "numericalUpperBound": 0.1
+    }
+  ]
+}

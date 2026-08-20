@@ -1,0 +1,7 @@
+.git
+.github
+artifacts
+dist
+*.pem
+*.key
+__pycache__

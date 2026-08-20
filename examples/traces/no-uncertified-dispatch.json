@@ -1,0 +1,12 @@
+{
+  "events": [
+    {
+      "type": "dispatch",
+      "request": "r",
+      "contractDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "artifactDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "deviceFingerprint": "d",
+      "precision": "fp64"
+    }
+  ]
+}

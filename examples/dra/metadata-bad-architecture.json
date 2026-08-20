@@ -1,0 +1,34 @@
+{
+  "apiVersion": "metadata.resource.k8s.io/v1alpha1",
+  "kind": "DeviceMetadata",
+  "metadata": {
+    "name": "demo-claim",
+    "namespace": "default",
+    "uid": "demo-uid",
+    "generation": 1
+  },
+  "podClaimName": "accelerator",
+  "requests": [
+    {
+      "name": "gpu",
+      "devices": [
+        {
+          "driver": "cpu.example.com",
+          "pool": "local",
+          "name": "cpu0",
+          "attributes": {
+            "claim2kernel.dev/architecture": {
+              "string": "arm64"
+            },
+            "claim2kernel.dev/healthy": {
+              "bool": true
+            },
+            "claim2kernel.dev/memory-bytes": {
+              "int": 34359738368
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

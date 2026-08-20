@@ -1,0 +1,26 @@
+{
+  "events": [
+    {
+      "type": "publish",
+      "profile": "p",
+      "contractDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "artifactDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "deviceFingerprint": "cpu/x86_64/1",
+      "precision": "fp64",
+      "numericalUpperBound": 0
+    },
+    {
+      "type": "revoke",
+      "profile": "p"
+    },
+    {
+      "type": "publish",
+      "profile": "p",
+      "contractDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "artifactDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "deviceFingerprint": "cpu/x86_64/1",
+      "precision": "fp64",
+      "numericalUpperBound": 0
+    }
+  ]
+}

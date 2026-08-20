@@ -1,0 +1,883 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://claim2kernel.dev/schemas/v1alpha1.json",
+  "title": "Claim2Kernel v1alpha1",
+  "description": "Structural schema. Digest, signature, semver, cross-field, positive-definiteness, and statistical checks are enforced by c2k validate.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/profile"
+    },
+    {
+      "$ref": "#/$defs/request"
+    },
+    {
+      "$ref": "#/$defs/signature"
+    },
+    {
+      "$ref": "#/$defs/catalog"
+    }
+  ],
+  "$defs": {
+    "scalar": {
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "boolean"
+        }
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$",
+          "maxLength": 63
+        },
+        "uid": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "version": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "feature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "required"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "number",
+            "integer",
+            "category"
+          ]
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "minimum": {
+          "type": "number"
+        },
+        "maximum": {
+          "type": "number"
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "uniqueItems": true,
+          "maxItems": 256
+        },
+        "oodFeature": {
+          "type": "boolean"
+        }
+      }
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec"
+      ],
+      "properties": {
+        "apiVersion": {
+          "const": "claim2kernel.dev/v1alpha1"
+        },
+        "kind": {
+          "const": "KernelProfile"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "version",
+            "createdAt",
+            "expiresAt"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$",
+              "maxLength": 63
+            },
+            "uid": {
+              "type": "string",
+              "maxLength": 256
+            },
+            "version": {
+              "type": "string"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "expiresAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "spec": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "artifact",
+            "target",
+            "inputDomain",
+            "precision",
+            "resources",
+            "numerical",
+            "latency",
+            "interference",
+            "versions",
+            "ood",
+            "policy",
+            "provenance"
+          ],
+          "properties": {
+            "artifact": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "path",
+                "digest",
+                "sizeBytes",
+                "maxBytes",
+                "protocol"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
+                },
+                "digest": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                },
+                "sizeBytes": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "maxBytes": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 2147483648
+                },
+                "protocol": {
+                  "const": "stdin-json-v1"
+                },
+                "defaultArgs": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 4096
+                  },
+                  "maxItems": 64
+                },
+                "containerDigest": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9./_-]+@sha256:[0-9a-f]{64}$"
+                }
+              }
+            },
+            "target": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "backend",
+                "vendor",
+                "architecture",
+                "deviceClass"
+              ],
+              "properties": {
+                "backend": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "vendor": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "architecture": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "deviceClass": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "inputDomain": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "features"
+              ],
+              "properties": {
+                "features": {
+                  "type": "object",
+                  "minProperties": 1,
+                  "additionalProperties": {
+                    "$ref": "#/$defs/feature"
+                  },
+                  "maxProperties": 64
+                },
+                "relations": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "left",
+                      "op",
+                      "right"
+                    ],
+                    "properties": {
+                      "left": {
+                        "type": "string",
+                        "maxLength": 128
+                      },
+                      "op": {
+                        "enum": [
+                          "<",
+                          "<=",
+                          "=",
+                          ">=",
+                          ">"
+                        ]
+                      },
+                      "right": {
+                        "type": "string",
+                        "maxLength": 128
+                      }
+                    }
+                  },
+                  "maxItems": 128
+                }
+              }
+            },
+            "precision": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "storage",
+                "accumulation"
+              ],
+              "properties": {
+                "storage": {
+                  "type": "string"
+                },
+                "accumulation": {
+                  "type": "string"
+                }
+              }
+            },
+            "resources": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "deviceCount",
+                "minMemoryBytes"
+              ],
+              "properties": {
+                "deviceCount": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "minMemoryBytes": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "counters": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "numerical": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "metric",
+                "upperBound",
+                "observedMax",
+                "testSampleCount"
+              ],
+              "properties": {
+                "metric": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "upperBound": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "observedMax": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "testSampleCount": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "latency": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "method",
+                "quantile",
+                "confidence",
+                "residualUpperUS",
+                "ioBudgetUS",
+                "runtimeJitterUS",
+                "calibrationSampleCount",
+                "testSampleCount",
+                "observedCoverage",
+                "model",
+                "calibratedAt",
+                "maxAgeSeconds"
+              ],
+              "properties": {
+                "method": {
+                  "enum": [
+                    "split-conformal",
+                    "one-sided-tolerance"
+                  ]
+                },
+                "quantile": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "exclusiveMaximum": 1
+                },
+                "confidence": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "exclusiveMaximum": 1
+                },
+                "residualUpperUS": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "ioBudgetUS": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "runtimeJitterUS": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "calibrationSampleCount": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "testSampleCount": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "observedCoverage": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "model": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "interceptUS",
+                    "coefficients",
+                    "featureOrder",
+                    "ridgeLambda"
+                  ],
+                  "properties": {
+                    "interceptUS": {
+                      "type": "number"
+                    },
+                    "coefficients": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "number"
+                      },
+                      "maxProperties": 64
+                    },
+                    "featureOrder": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "uniqueItems": true,
+                      "maxItems": 64
+                    },
+                    "ridgeLambda": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  }
+                },
+                "calibratedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "maxAgeSeconds": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "interference": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "metrics"
+              ],
+              "properties": {
+                "metrics": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "minimum",
+                      "maximum"
+                    ],
+                    "properties": {
+                      "minimum": {
+                        "type": "number"
+                      },
+                      "maximum": {
+                        "type": "number"
+                      }
+                    }
+                  },
+                  "maxProperties": 64
+                }
+              }
+            },
+            "versions": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "minLength": 1
+              },
+              "maxProperties": 64
+            },
+            "deviceAssertions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "attribute",
+                  "op",
+                  "value"
+                ],
+                "properties": {
+                  "attribute": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "op": {
+                    "enum": [
+                      "eq",
+                      "ne",
+                      "gte",
+                      "lte",
+                      "contains"
+                    ]
+                  },
+                  "value": {
+                    "$ref": "#/$defs/scalar"
+                  }
+                }
+              },
+              "maxItems": 64
+            },
+            "ood": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "method",
+                "required",
+                "features",
+                "mean",
+                "inverseCovariance",
+                "threshold",
+                "coverage",
+                "calibrationSampleCount",
+                "observedTestInlierRate",
+                "regularization"
+              ],
+              "properties": {
+                "method": {
+                  "type": "string"
+                },
+                "required": {
+                  "type": "boolean"
+                },
+                "features": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true,
+                  "maxItems": 64
+                },
+                "mean": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "maxItems": 64
+                },
+                "inverseCovariance": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "maxItems": 64
+                  },
+                  "maxItems": 64
+                },
+                "threshold": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "coverage": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "calibrationSampleCount": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "observedTestInlierRate": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "regularization": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            },
+            "policy": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "failClosed"
+              ],
+              "properties": {
+                "failClosed": {
+                  "const": true
+                },
+                "fallbackProfiles": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true,
+                  "maxItems": 0
+                }
+              }
+            },
+            "provenance": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "compiler",
+                "sourceDigest",
+                "datasetDigest"
+              ],
+              "properties": {
+                "compiler": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                },
+                "compilerDigest": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                },
+                "sourceDigest": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                },
+                "datasetDigest": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                },
+                "gitCommit": {
+                  "type": "string"
+                },
+                "notes": {
+                  "type": "string",
+                  "maxLength": 16384
+                }
+              }
+            }
+          }
+        },
+        "seal": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "contractDigest",
+            "modelDigest",
+            "sealedAt"
+          ],
+          "properties": {
+            "contractDigest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "modelDigest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "sealedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec"
+      ],
+      "properties": {
+        "apiVersion": {
+          "const": "claim2kernel.dev/v1alpha1"
+        },
+        "kind": {
+          "const": "KernelRequest"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$",
+              "maxLength": 63
+            },
+            "uid": {
+              "type": "string",
+              "maxLength": 256
+            },
+            "version": {
+              "type": "string"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "expiresAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "spec": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "deadlineUS",
+            "safetyMarginUS",
+            "maxNumericalError",
+            "inputs",
+            "interference",
+            "versions"
+          ],
+          "properties": {
+            "deadlineUS": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "safetyMarginUS": {
+              "type": "number",
+              "minimum": 0
+            },
+            "maxNumericalError": {
+              "type": "number",
+              "minimum": 0
+            },
+            "inputs": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "$ref": "#/$defs/scalar"
+              },
+              "maxProperties": 128
+            },
+            "interference": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "number"
+              },
+              "maxProperties": 64
+            },
+            "versions": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "maxProperties": 64
+            },
+            "requiredProfile": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "apiVersion",
+        "kind",
+        "algorithm",
+        "keyID",
+        "contractDigest",
+        "artifactDigest",
+        "signedAt",
+        "signature"
+      ],
+      "properties": {
+        "apiVersion": {
+          "const": "claim2kernel.dev/v1alpha1"
+        },
+        "kind": {
+          "const": "KernelProfileSignature"
+        },
+        "algorithm": {
+          "const": "Ed25519"
+        },
+        "keyID": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "contractDigest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "artifactDigest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "signedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "signature": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "maxLength": 256
+        }
+      }
+    },
+    "catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "profiles"
+      ],
+      "properties": {
+        "apiVersion": {
+          "const": "claim2kernel.dev/v1alpha1"
+        },
+        "kind": {
+          "const": "KernelCatalog"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$",
+              "maxLength": 63
+            },
+            "uid": {
+              "type": "string",
+              "maxLength": 256
+            },
+            "version": {
+              "type": "string"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "expiresAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "profiles": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/profile"
+          },
+          "maxItems": 128
+        }
+      }
+    }
+  }
+}

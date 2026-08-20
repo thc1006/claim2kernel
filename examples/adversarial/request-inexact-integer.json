@@ -1,0 +1,26 @@
+{
+  "apiVersion": "claim2kernel.dev/v1alpha1",
+  "kind": "KernelRequest",
+  "metadata": {
+    "name": "inexact-integer"
+  },
+  "spec": {
+    "deadlineUS": 2000,
+    "safetyMarginUS": 100,
+    "maxNumericalError": 0,
+    "inputs": {
+      "antennas": 9007199254740992,
+      "ues": 8,
+      "batch": 8,
+      "mode": "rzf"
+    },
+    "interference": {
+      "cpu_pressure": 0.1
+    },
+    "versions": {
+      "go": "1.23.2",
+      "kubernetes": "1.36.3"
+    },
+    "requiredProfile": "demo-cpu-v1"
+  }
+}

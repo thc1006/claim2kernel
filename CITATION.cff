@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this research prototype, cite the repository and the eventual archived release."
+title: "Claim2Kernel: Verifiable Resource-to-Kernel Contracts for DRA-Managed AI-RAN"
+version: "0.1.0-research"
+date-released: 2026-08-20
+license: Apache-2.0
+authors:
+  - name: "Claim2Kernel contributors"
+keywords:
+  - Kubernetes DRA
+  - Kueue
+  - Mojo
+  - AI-RAN
+  - conformal prediction
+  - out-of-distribution

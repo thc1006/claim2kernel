@@ -1,0 +1,26 @@
+{
+  "apiVersion": "claim2kernel.dev/v1alpha1",
+  "kind": "KernelRequest",
+  "metadata": {
+    "name": "ood"
+  },
+  "spec": {
+    "deadlineUS": 1000000,
+    "safetyMarginUS": 100,
+    "maxNumericalError": 0,
+    "inputs": {
+      "antennas": 256,
+      "ues": 64,
+      "batch": 128,
+      "mode": "rzf"
+    },
+    "interference": {
+      "cpu_pressure": 0.1
+    },
+    "versions": {
+      "go": "1.23.2",
+      "kubernetes": "1.36.3"
+    },
+    "requiredProfile": "demo-cpu-v1"
+  }
+}

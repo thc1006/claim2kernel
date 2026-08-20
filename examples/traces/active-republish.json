@@ -1,0 +1,22 @@
+{
+  "events": [
+    {
+      "type": "publish",
+      "profile": "p1",
+      "contractDigest": "sha256:a",
+      "artifactDigest": "sha256:b",
+      "deviceFingerprint": "gpu0-v1",
+      "precision": "fp32",
+      "numericalUpperBound": 0.001
+    },
+    {
+      "type": "publish",
+      "profile": "p1",
+      "contractDigest": "sha256:c",
+      "artifactDigest": "sha256:d",
+      "deviceFingerprint": "gpu0-v2",
+      "precision": "fp32",
+      "numericalUpperBound": 0.001
+    }
+  ]
+}

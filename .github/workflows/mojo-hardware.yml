@@ -1,0 +1,50 @@
+name: mojo-hardware-validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs_on:
+        description: 'JSON runner labels, for example ["self-hosted","linux","x64","nvidia-sm90"]'
+        required: true
+        default: '["self-hosted","linux","x64","gpu"]'
+      target_accelerator:
+        description: 'Mojo target, for example nvidia:sm_90 or amdgpu:gfx942'
+        required: true
+      evidence_name:
+        description: 'Non-secret artifact label'
+        required: true
+        default: gpu-conformance
+
+permissions:
+  contents: read
+
+jobs:
+  conformance:
+    # Manual-only: never run untrusted pull-request code on a self-hosted GPU.
+    runs-on: ${{ fromJSON(inputs.runs_on) }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/mojo
+          {
+            date -u +%Y-%m-%dT%H:%M:%SZ
+            uname -a
+            mojo --version
+            command -v nvidia-smi >/dev/null && nvidia-smi -q || true
+            command -v rocm-smi >/dev/null && rocm-smi --showall || true
+          } | tee artifacts/mojo/environment.txt
+      - name: Build and run Mojo conformance
+        env:
+          MOJO_TARGET_ACCELERATOR: ${{ inputs.target_accelerator }}
+        run: ./kernels/mojo/build.sh artifacts/mojo/build
+      - name: Digest evidence
+        run: find artifacts/mojo -type f -print0 | sort -z | xargs -0 sha256sum | tee artifacts/mojo/MANIFEST.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.evidence_name }}
+          path: artifacts/mojo
+          if-no-files-found: error

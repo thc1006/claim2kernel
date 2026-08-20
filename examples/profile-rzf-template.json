@@ -1,0 +1,197 @@
+{
+  "apiVersion": "claim2kernel.dev/v1alpha1",
+  "kind": "KernelProfile",
+  "metadata": {
+    "name": "rzf-mojo-gpu-template",
+    "version": "0.1.0-unbound",
+    "createdAt": "2026-08-20T00:00:00Z",
+    "expiresAt": "2027-01-01T00:00:00Z"
+  },
+  "spec": {
+    "artifact": {
+      "path": "bin/rzf-kernel",
+      "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "sizeBytes": 1,
+      "maxBytes": 268435456,
+      "protocol": "stdin-json-v1",
+      "containerDigest": "ghcr.io/example/mojoran@sha256:4444444444444444444444444444444444444444444444444444444444444444"
+    },
+    "target": {
+      "backend": "mojo-gpu",
+      "vendor": "nvidia-or-amd",
+      "architecture": "replace-after-build",
+      "deviceClass": "gpu.example.com"
+    },
+    "inputDomain": {
+      "features": {
+        "antennas": {
+          "kind": "integer",
+          "required": true,
+          "minimum": 8,
+          "maximum": 256,
+          "oodFeature": true
+        },
+        "ues": {
+          "kind": "integer",
+          "required": true,
+          "minimum": 1,
+          "maximum": 64,
+          "oodFeature": true
+        },
+        "batch": {
+          "kind": "integer",
+          "required": true,
+          "minimum": 1,
+          "maximum": 128,
+          "oodFeature": true
+        },
+        "mode": {
+          "kind": "category",
+          "required": true,
+          "categories": [
+            "rzf"
+          ]
+        }
+      },
+      "relations": [
+        {
+          "left": "ues",
+          "op": "<=",
+          "right": "antennas"
+        }
+      ]
+    },
+    "precision": {
+      "storage": "complex64",
+      "accumulation": "complex64"
+    },
+    "resources": {
+      "deviceCount": 1,
+      "minMemoryBytes": 8589934592,
+      "counters": {
+        "gpu-memory": "8Gi"
+      }
+    },
+    "numerical": {
+      "metric": "relative-l2",
+      "upperBound": 0.001,
+      "observedMax": 0.0005,
+      "testSampleCount": 1
+    },
+    "latency": {
+      "method": "split-conformal",
+      "quantile": 0.95,
+      "confidence": 0.95,
+      "residualUpperUS": 1,
+      "ioBudgetUS": 50,
+      "runtimeJitterUS": 50,
+      "calibrationSampleCount": 1,
+      "testSampleCount": 1,
+      "observedCoverage": 1.0,
+      "model": {
+        "interceptUS": 0,
+        "coefficients": {
+          "input.antennas": 0,
+          "input.ues": 0,
+          "input.batch": 0,
+          "interference.gpu_busy": 0
+        },
+        "featureOrder": [
+          "input.antennas",
+          "input.ues",
+          "input.batch",
+          "interference.gpu_busy"
+        ],
+        "ridgeLambda": 1e-06
+      },
+      "calibratedAt": "2026-08-20T00:00:00Z",
+      "maxAgeSeconds": 2592000
+    },
+    "interference": {
+      "metrics": {
+        "gpu_busy": {
+          "minimum": 0,
+          "maximum": 0.8
+        }
+      }
+    },
+    "versions": {
+      "mojo": ">=1.0.0b2,<1.1.0",
+      "kubernetes": ">=1.36.0,<1.37.0",
+      "driver": ">=0.0.0"
+    },
+    "deviceAssertions": [
+      {
+        "attribute": "claim2kernel.dev/architecture",
+        "op": "eq",
+        "value": "replace-after-build"
+      },
+      {
+        "attribute": "claim2kernel.dev/healthy",
+        "op": "eq",
+        "value": true
+      },
+      {
+        "attribute": "claim2kernel.dev/memory-bytes",
+        "op": "gte",
+        "value": 8589934592
+      }
+    ],
+    "ood": {
+      "method": "mahalanobis-conformal",
+      "required": true,
+      "features": [
+        "input.antennas",
+        "input.ues",
+        "input.batch",
+        "interference.gpu_busy"
+      ],
+      "mean": [
+        64,
+        8,
+        4,
+        0.1
+      ],
+      "inverseCovariance": [
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ],
+      "threshold": 1,
+      "coverage": 0.95,
+      "calibrationSampleCount": 1,
+      "observedTestInlierRate": 1.0,
+      "regularization": 0.0001
+    },
+    "policy": {
+      "failClosed": true
+    },
+    "provenance": {
+      "compiler": "UNBOUND: require measured Mojo 1.0 beta hardware build",
+      "sourceDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "datasetDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "notes": "Template only. Do not seal or cite until artifact, driver, hardware, and independent measurements are bound."
+    }
+  }
+}

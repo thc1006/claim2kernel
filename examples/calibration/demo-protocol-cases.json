@@ -1,0 +1,258 @@
+{
+  "evidenceType": "deterministic-protocol-cases",
+  "notPerformanceEvidence": true,
+  "cases": [
+    {
+      "antennas": 16,
+      "ues": 1,
+      "batch": 1,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 16,
+      "ues": 1,
+      "batch": 4,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 16,
+      "ues": 1,
+      "batch": 8,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 16,
+      "ues": 4,
+      "batch": 1,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 16,
+      "ues": 4,
+      "batch": 4,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 16,
+      "ues": 4,
+      "batch": 8,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 16,
+      "ues": 8,
+      "batch": 1,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 16,
+      "ues": 8,
+      "batch": 4,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 16,
+      "ues": 8,
+      "batch": 8,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 32,
+      "ues": 1,
+      "batch": 1,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 32,
+      "ues": 1,
+      "batch": 4,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 32,
+      "ues": 1,
+      "batch": 8,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 32,
+      "ues": 4,
+      "batch": 1,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 32,
+      "ues": 4,
+      "batch": 4,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 32,
+      "ues": 4,
+      "batch": 8,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 32,
+      "ues": 8,
+      "batch": 1,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 32,
+      "ues": 8,
+      "batch": 4,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 32,
+      "ues": 8,
+      "batch": 8,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 64,
+      "ues": 1,
+      "batch": 1,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 64,
+      "ues": 1,
+      "batch": 4,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 64,
+      "ues": 1,
+      "batch": 8,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 64,
+      "ues": 4,
+      "batch": 1,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 64,
+      "ues": 4,
+      "batch": 4,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 64,
+      "ues": 4,
+      "batch": 8,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 64,
+      "ues": 8,
+      "batch": 1,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 64,
+      "ues": 8,
+      "batch": 4,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 64,
+      "ues": 8,
+      "batch": 8,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 128,
+      "ues": 1,
+      "batch": 1,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 128,
+      "ues": 1,
+      "batch": 4,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 128,
+      "ues": 1,
+      "batch": 8,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 128,
+      "ues": 4,
+      "batch": 1,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 128,
+      "ues": 4,
+      "batch": 4,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 128,
+      "ues": 4,
+      "batch": 8,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 128,
+      "ues": 8,
+      "batch": 1,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 128,
+      "ues": 8,
+      "batch": 4,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    },
+    {
+      "antennas": 128,
+      "ues": 8,
+      "batch": 8,
+      "mode": "rzf",
+      "cpu_pressure": 0.1
+    }
+  ]
+}

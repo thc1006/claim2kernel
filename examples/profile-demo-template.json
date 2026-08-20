@@ -1,0 +1,189 @@
+{
+  "apiVersion": "claim2kernel.dev/v1alpha1",
+  "kind": "KernelProfile",
+  "metadata": {
+    "name": "demo-cpu-v1",
+    "version": "0.1.0",
+    "createdAt": "2026-08-20T00:00:00Z",
+    "expiresAt": "2027-01-01T00:00:00Z"
+  },
+  "spec": {
+    "artifact": {
+      "path": "bin/demo-kernel",
+      "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "sizeBytes": 1,
+      "maxBytes": 67108864,
+      "protocol": "stdin-json-v1",
+      "containerDigest": "ghcr.io/example/claim2kernel@sha256:3333333333333333333333333333333333333333333333333333333333333333"
+    },
+    "target": {
+      "backend": "cpu",
+      "vendor": "generic",
+      "architecture": "x86_64",
+      "deviceClass": "cpu.example.com"
+    },
+    "inputDomain": {
+      "features": {
+        "antennas": {
+          "kind": "integer",
+          "required": true,
+          "minimum": 8,
+          "maximum": 256,
+          "oodFeature": true
+        },
+        "ues": {
+          "kind": "integer",
+          "required": true,
+          "minimum": 1,
+          "maximum": 64,
+          "oodFeature": true
+        },
+        "batch": {
+          "kind": "integer",
+          "required": true,
+          "minimum": 1,
+          "maximum": 128,
+          "oodFeature": true
+        },
+        "mode": {
+          "kind": "category",
+          "required": true,
+          "categories": [
+            "rzf",
+            "beam-score"
+          ]
+        }
+      },
+      "relations": [
+        {
+          "left": "ues",
+          "op": "<=",
+          "right": "antennas"
+        }
+      ]
+    },
+    "precision": {
+      "storage": "fp64",
+      "accumulation": "fp64"
+    },
+    "resources": {
+      "deviceCount": 1,
+      "minMemoryBytes": 0
+    },
+    "numerical": {
+      "metric": "protocol-conformance",
+      "upperBound": 0,
+      "observedMax": 0,
+      "testSampleCount": 100
+    },
+    "latency": {
+      "method": "split-conformal",
+      "quantile": 0.95,
+      "confidence": 0.95,
+      "residualUpperUS": 75,
+      "ioBudgetUS": 25,
+      "runtimeJitterUS": 25,
+      "calibrationSampleCount": 200,
+      "testSampleCount": 100,
+      "observedCoverage": 0.99,
+      "model": {
+        "interceptUS": 40,
+        "coefficients": {
+          "input.antennas": 0.1,
+          "input.ues": 1.0,
+          "input.batch": 0.5,
+          "interference.cpu_pressure": 100
+        },
+        "featureOrder": [
+          "input.antennas",
+          "input.ues",
+          "input.batch",
+          "interference.cpu_pressure"
+        ],
+        "ridgeLambda": 1e-06
+      },
+      "calibratedAt": "2026-08-20T00:00:00Z",
+      "maxAgeSeconds": 31536000
+    },
+    "interference": {
+      "metrics": {
+        "cpu_pressure": {
+          "minimum": 0,
+          "maximum": 0.5
+        }
+      }
+    },
+    "versions": {
+      "go": ">=1.23.0,<1.27.0",
+      "kubernetes": ">=1.36.0,<1.37.0"
+    },
+    "deviceAssertions": [
+      {
+        "attribute": "claim2kernel.dev/architecture",
+        "op": "eq",
+        "value": "x86_64"
+      },
+      {
+        "attribute": "claim2kernel.dev/healthy",
+        "op": "eq",
+        "value": true
+      }
+    ],
+    "ood": {
+      "method": "mahalanobis-conformal",
+      "required": true,
+      "features": [
+        "input.antennas",
+        "input.ues",
+        "input.batch",
+        "interference.cpu_pressure"
+      ],
+      "mean": [
+        64,
+        8,
+        8,
+        0.1
+      ],
+      "inverseCovariance": [
+        [
+          0.000244140625,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0.015625,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0.015625,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          20
+        ]
+      ],
+      "threshold": 25,
+      "coverage": 0.95,
+      "calibrationSampleCount": 200,
+      "observedTestInlierRate": 0.98,
+      "regularization": 0.0001
+    },
+    "policy": {
+      "failClosed": true
+    },
+    "provenance": {
+      "compiler": "go1.23.2",
+      "sourceDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "datasetDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "notes": "Protocol-conformance profile only; not Mojo or GPU performance evidence."
+    }
+  }
+}
