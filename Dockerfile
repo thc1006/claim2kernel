@@ -3,6 +3,7 @@ WORKDIR /src
 COPY go.mod ./
 COPY cmd ./cmd
 COPY pkg ./pkg
+COPY kernels/demo ./kernels/demo
 RUN CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/c2k ./cmd/c2k
 RUN CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/demo-kernel ./kernels/demo
 
