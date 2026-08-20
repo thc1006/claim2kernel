@@ -62,6 +62,7 @@ PY
 expect_fail old-signature-on-new-contract 'different profile or artifact' "$OUT/c2k" verify-signature --profile "$OUT/resealed-tampered.json" --signature "$OUT/profile-signature.json" --public-key "$OUT/keys/signing-public.pem" --at 2026-08-20T03:00:00Z
 
 cp "$OUT/runtime/bin/demo-kernel" "$OUT/runtime/bin/demo-kernel-tampered"
+chmod u+w "$OUT/runtime/bin/demo-kernel"
 printf 'x' >> "$OUT/runtime/bin/demo-kernel"
 expect_fail artifact-tamper 'ARTIFACT_VERIFICATION_FAILED' "$OUT/c2k" launch --verify-only --root "$OUT/runtime" --profile "$OUT/profile-sealed.json" --request examples/requests/in-domain.json --metadata examples/dra/metadata-good.json --signature "$OUT/profile-signature.json" --public-key "$OUT/keys/signing-public.pem" --require-signature --at 2026-08-20T03:00:00Z
 mv "$OUT/runtime/bin/demo-kernel-tampered" "$OUT/runtime/bin/demo-kernel"; chmod 0500 "$OUT/runtime/bin/demo-kernel"
