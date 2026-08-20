@@ -1,14 +1,19 @@
 name: mojo-hardware-validation
 
+# Self-hosted, manual-only on-device validation. This is where real GPU execution
+# and measurements happen (docs/MOJO_HARDWARE_PROTOCOL.md); mojo-build.yml only
+# cross-compiles on hosted runners. Never triggered by pull_request: untrusted PR
+# code must never run on a self-hosted GPU.
+
 on:
   workflow_dispatch:
     inputs:
       runs_on:
-        description: 'JSON runner labels, for example ["self-hosted","linux","x64","nvidia-sm90"]'
+        description: 'JSON runner labels, e.g. ["self-hosted","linux","x64","nvidia-sm90"]'
         required: true
         default: '["self-hosted","linux","x64","gpu"]'
       target_accelerator:
-        description: 'Mojo target, for example nvidia:sm_90 or amdgpu:gfx942'
+        description: 'Mojo target, e.g. nvidia:sm_90 or amdgpu:gfx942'
         required: true
       evidence_name:
         description: 'Non-secret artifact label'
@@ -18,13 +23,17 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: mojo-hardware-${{ github.ref }}-${{ inputs.target_accelerator }}
+  cancel-in-progress: false
+
 jobs:
   conformance:
-    # Manual-only: never run untrusted pull-request code on a self-hosted GPU.
     runs-on: ${{ fromJSON(inputs.runs_on) }}
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+
       - name: Record environment
         shell: bash
         run: |
@@ -33,17 +42,35 @@ jobs:
           {
             date -u +%Y-%m-%dT%H:%M:%SZ
             uname -a
-            mojo --version
+            command -v mojo >/dev/null && mojo --version || echo "mojo: absent (will install)"
             command -v nvidia-smi >/dev/null && nvidia-smi -q || true
             command -v rocm-smi >/dev/null && rocm-smi --showall || true
           } | tee artifacts/mojo/environment.txt
-      - name: Build and run Mojo conformance
+
+      - name: Ensure Mojo (MAX) toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v mojo >/dev/null 2>&1; then
+            export PIXI_HOME="$HOME/.pixi"
+            curl -fsSL https://pixi.sh/install.sh | bash
+            "$PIXI_HOME/bin/pixi" global install -c https://conda.modular.com/max -c conda-forge max
+            echo "$PIXI_HOME/envs/max/bin" >> "$GITHUB_PATH"
+            echo "MODULAR_HOME=$PIXI_HOME/envs/max/share/max" >> "$GITHUB_ENV"
+          fi
+
+      - name: Verify pinned Mojo version
+        run: python3 scripts/check_mojo_version.py "$(mojo --version)"
+
+      - name: Build and run Mojo conformance on the allocated accelerator
         env:
           MOJO_TARGET_ACCELERATOR: ${{ inputs.target_accelerator }}
         run: ./kernels/mojo/build.sh artifacts/mojo/build
+
       - name: Digest evidence
         run: find artifacts/mojo -type f -print0 | sort -z | xargs -0 sha256sum | tee artifacts/mojo/MANIFEST.sha256
-      - uses: actions/upload-artifact@v4
+
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ inputs.evidence_name }}
           path: artifacts/mojo
