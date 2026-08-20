@@ -15,3 +15,8 @@ mojo build "${COMMON[@]}" --emit shared-lib "$ROOT/kernels/mojo/contract_exports
 mojo build "${COMMON[@]}" --emit asm "$ROOT/kernels/mojo/gpu_conformance.mojo" -o "$OUT/gpu-conformance.s"
 "$OUT/gpu-conformance"
 printf '{"mojoBuild":"passed","target":"%s"}\n' "${TARGET:-host-detected}"
+
+# The RZF precoder kernel is built by kernels/mojo/build_rzf.sh, which
+# cross-compiles kernels/mojo/rzf_kernel.mojo for a declared target accelerator
+# (nvidia:sm_90 / nvidia:sm_80 / amdgpu:gfx942) and retains build logs + digests.
+# See kernels/mojo/RZF_EVIDENCE.md for the verified compile results.
