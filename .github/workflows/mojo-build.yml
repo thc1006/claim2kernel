@@ -68,7 +68,7 @@ jobs:
           mojo --version
           python3 scripts/check_mojo_version.py "$(mojo --version)"
 
-      - name: Cross-compile GPU conformance probe for each target
+      - name: Cross-compile RZF kernel + conformance probe for each target
         run: |
           set -euo pipefail
           mkdir -p artifacts/mojo
@@ -77,6 +77,8 @@ jobs:
             echo "::group::$target"
             mojo build --warn-on-unstable-apis --target-accelerator "$target" \
               kernels/mojo/gpu_conformance.mojo -o "artifacts/mojo/gpu-conformance-$safe"
+            mojo build --warn-on-unstable-apis --target-accelerator "$target" \
+              kernels/mojo/rzf_kernel.mojo -o "artifacts/mojo/rzf-conformance-$safe"
             echo "::endgroup::"
           done
 

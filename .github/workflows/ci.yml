@@ -53,6 +53,10 @@ jobs:
       - run: python -m compileall -q tools kernels/rzf
       - run: python tools/schema_check.py
       - run: python kernels/rzf/rzf_reference.py --self-test
+      - name: RZF CPU correctness (GPU cases skip without a backend library)
+        run: |
+          PYTHONPATH=kernels/rzf python kernels/rzf/rzf_algorithm.py
+          PYTHONPATH=kernels/rzf:kernels/host python -m unittest -v kernels.rzf.tests.test_rzf_correctness
 
   integration:
     name: integration (demo, adversarial, calibrate)
