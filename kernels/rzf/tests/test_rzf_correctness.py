@@ -46,12 +46,12 @@ class _BackendMixin:
 
     @classmethod
     def backend(cls, batch, users, antennas):
+        # open_backend returns None only when NO backend library is present -- a
+        # legitimate skip. If a library IS present but create() fails, let the
+        # exception propagate: a broken backend must fail the test, not skip it.
         if open_backend is None:
             return None
-        try:
-            return open_backend(max(batch, 1), max(users, 1), max(antennas, 1))
-        except Exception:
-            return None
+        return open_backend(max(batch, 1), max(users, 1), max(antennas, 1))
 
 
 class TestNumericalAgreement(unittest.TestCase, _BackendMixin):
