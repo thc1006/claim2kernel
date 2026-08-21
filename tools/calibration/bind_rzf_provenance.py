@@ -68,7 +68,7 @@ def main() -> None:
         prov["compiler"] = ("NOT RUN: Mojo compiler unavailable in this environment; "
                             "requires Mojo 1.0.0b2 / Modular 26.4 (scripts/check_mojo_version.py)")
     prov.pop("compilerDigest", None)  # binary digest still unbound (no artifact seal)
-    commit = git_commit(Path.cwd())
+    commit = git_commit(source.parent)  # the source repo, not wherever the process runs
     if commit:
         prov["gitCommit"] = commit
 
@@ -81,9 +81,9 @@ def main() -> None:
 
     compiled_note = ""
     if args.compiler:
-        compiled_note = (f" The kernel source COMPILES for the declared targets with {args.compiler} "
-                         "(build logs under artifacts/mojo/); GPU EXECUTION on sm_80/sm_90/gfx942 is "
-                         "still NOT RUN (no such device here).")
+        compiled_note = (f" Operator attests the kernel source was compiled for the declared targets "
+                         f"with {args.compiler}; GPU EXECUTION on sm_80/sm_90/gfx942 is still NOT RUN "
+                         "(no such device here).")
     prov["notes"] = (
         "PARTIALLY BOUND. sourceDigest and datasetDigest are real file hashes. "
         "artifact.digest (placeholder), containerDigest, and compilerDigest are NOT RUN: no "
@@ -94,6 +94,10 @@ def main() -> None:
 
     # Keep the artifact digest as the explicit placeholder; do not fake it.
     profile["spec"]["artifact"]["digest"] = PLACEHOLDER_DIGEST
+    # containerDigest is NOT RUN too: drop any value carried by the template so the
+    # profile does not ship an unbound (fake) container reference while we report it
+    # NOT RUN. bind_artifact.py would bind it for real at seal time.
+    profile["spec"]["artifact"].pop("containerDigest", None)
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
