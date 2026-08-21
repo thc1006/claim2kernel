@@ -2,11 +2,14 @@
 """ctypes host for the c2k_rzf C ABI (kernels/include/c2k_rzf.h).
 
 This is the portable, stable host interface: it loads *either* backend shared
-library -- the Mojo GPU kernel (`libc2k_rzf.so`, the deployable target) or the
-CUDA reference/baseline (`libc2k_rzf_cuda.so`) -- and exposes an identical
-Python surface. Correctness tests, the benchmark harness, and the stdin-json-v1
-service all call through here, so a single ABI is exercised regardless of
-backend.
+library and exposes an identical Python surface, so correctness tests, the
+benchmark harness, and the stdin-json-v1 service exercise a single ABI
+regardless of backend. Today the runnable backend is the CUDA reference
+(`libc2k_rzf_cuda.so`), which implements the full create/run/destroy C ABI. The
+Mojo `libc2k_rzf.so` is the deployable *target*: `rzf_kernel.mojo` currently
+exports only the scalar ABI (version, workspace) plus the device kernel, and
+grows the full handle ABI as a self-hosted hardware milestone -- until then no
+`libc2k_rzf.so` is produced and selection falls through to the CUDA backend.
 
 Backend selection order (first that exists wins), overridable with C2K_RZF_LIB:
   1) $C2K_RZF_LIB (explicit path)

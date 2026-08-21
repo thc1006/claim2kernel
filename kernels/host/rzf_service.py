@@ -17,6 +17,7 @@ rejection mirrors pkg/jsonsafe and tools/calibration/jsonsafe.py.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import sys
@@ -33,6 +34,10 @@ from rzf_reference import metrics, rzf_precoder  # noqa: E402
 MAX_STDIN_BYTES = 1 << 20
 MAX_BATCH, MAX_USERS, MAX_ANTENNAS = 128, 64, 256
 ALPHA = 0.1  # profile-bound regularization weight
+# FP32 RZF budget: the in-process check is not merely reported, it gates the
+# top-level status. A backend that returns per-batch OK but a numerically wrong
+# precoder is a hard failure, not a success.
+NUMERICAL_TOLERANCE = 1e-3
 
 
 def _no_dupes(pairs):
@@ -90,9 +95,12 @@ def main() -> None:
     if backend is None:
         fail("NOT RUN: no c2k_rzf backend shared library present (build Mojo or CUDA first)")
 
-    # Deterministic channel derived from the request name so a given request is
-    # reproducible. This is protocol conformance, not a physical channel model.
-    seed = abs(hash((req.get("metadata", {}).get("name", ""), batch, ues, antennas))) % (2**31)
+    # Deterministic channel derived from the request identity. hashlib (not the
+    # per-process-salted builtin hash()) keeps it reproducible across processes
+    # and hosts. This is protocol conformance, not a physical channel model.
+    name = req.get("metadata", {}).get("name", "")
+    key = f"{name}|{batch}|{ues}|{antennas}".encode("utf-8")
+    seed = int.from_bytes(hashlib.sha256(key).digest()[:4], "little")
     rng = np.random.default_rng(seed)
     h = ((rng.normal(size=(batch, ues, antennas))
           + 1j * rng.normal(size=(batch, ues, antennas))) / np.sqrt(2)).astype(np.complex64)
@@ -103,14 +111,23 @@ def main() -> None:
             ref = rzf_precoder(h, ALPHA, np.complex128)
             num = metrics(ref, w, h)
             hist = {int(s): int((status == s).sum()) for s in np.unique(status)}
+            all_ok = bool((status == C2K_RZF_OK).all())
+            within_tol = bool(num["relativeL2"] < NUMERICAL_TOLERANCE)
+            if all_ok and within_tol:
+                top = "ok"
+            elif not all_ok:
+                top = "partial"            # some elements rejected -- fail-closed working as intended
+            else:
+                top = "numerical-mismatch"  # every batch OK yet W diverges from the oracle: backend is wrong
             out = {
                 "protocol": "stdin-json-v1",
-                "status": "ok" if (status == C2K_RZF_OK).all() else "partial",
-                "request": req.get("metadata", {}).get("name", ""),
+                "status": top,
+                "request": name,
                 "backend": backend.backend_name,
                 "shape": {"batch": batch, "users": ues, "antennas": antennas},
                 "statusHistogram": hist,
-                "numerical": {"relativeL2": num["relativeL2"], "maxAbs": num["maxAbs"]},
+                "numerical": {"relativeL2": num["relativeL2"], "maxAbs": num["maxAbs"],
+                              "tolerance": NUMERICAL_TOLERANCE, "withinTolerance": within_tol},
                 "timingMs": {k: timing[k] for k in ("h2dMs", "kernelMs", "d2hMs", "eventTimed")},
                 "contractDigest": os.getenv("C2K_CONTRACT_DIGEST", ""),
                 "artifactDigest": os.getenv("C2K_ARTIFACT_DIGEST", ""),
@@ -120,6 +137,8 @@ def main() -> None:
 
     json.dump(out, sys.stdout, allow_nan=False)
     sys.stdout.write("\n")
+    if out["status"] == "numerical-mismatch":
+        sys.exit(3)  # fail closed: a numerically wrong precoder is not a success
 
 
 if __name__ == "__main__":
