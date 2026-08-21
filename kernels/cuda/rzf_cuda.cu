@@ -138,10 +138,14 @@ __global__ void rzf_kernel(const float2 *__restrict__ H, float2 *__restrict__ W,
     }
 
     // Block reduction of the Frobenius sum-of-squares (deterministic tree).
+    // Robust to any blockDim, not only powers of two: the (idx + s < nthreads)
+    // guard carries the tail element instead of silently dropping it. The
+    // __syncthreads() is outside the branch so every thread reaches it.
     redsum[t] = local_sq;
     __syncthreads();
-    for (int s = nthreads / 2; s > 0; s >>= 1) {
-        if (t < s) redsum[t] += redsum[t + s];
+    for (int s = 1; s < nthreads; s <<= 1) {
+        int idx = 2 * s * t;
+        if (idx + s < nthreads) redsum[idx] += redsum[idx + s];
         __syncthreads();
     }
     if (t == 0) {
@@ -249,10 +253,14 @@ int32_t c2k_rzf_run(void *handle, const float *h_interleaved, int32_t batch, int
     size_t w_bytes = w_elems * 2 * sizeof(float);
     size_t shmem = (size_t)users * users * sizeof(float2);
 
-    int shared_optin = 0;
-    cudaDeviceGetAttribute(&shared_optin, cudaDevAttrMaxSharedMemoryPerBlockOptin, 0);
-    if ((int)shmem > shared_optin && shared_optin > 0) {
-        set_err(c, "U*U Cholesky tile exceeds device shared memory; reduce users");
+    // The dynamic Cholesky tile plus the kernel's static shared (redsum[256] +
+    // flags + scale) must fit the device's per-block shared limit; the static
+    // part also counts toward the launch limit, so include it.
+    const size_t static_shared = sizeof(float) * 256 + sizeof(int) * 2 + sizeof(float);
+    int max_shared = 0;
+    cudaDeviceGetAttribute(&max_shared, cudaDevAttrMaxSharedMemoryPerBlock, 0);
+    if (max_shared > 0 && shmem + static_shared > (size_t)max_shared) {
+        set_err(c, "U*U Cholesky tile + static shared exceeds device shared memory; reduce users");
         return C2K_RZF_CALL_EDEVICE;
     }
 
@@ -265,6 +273,10 @@ int32_t c2k_rzf_run(void *handle, const float *h_interleaved, int32_t batch, int
     rzf_kernel<<<batch, c->block_dim, shmem, c->stream>>>(
         reinterpret_cast<const float2 *>(c->d_H), reinterpret_cast<float2 *>(c->d_W),
         c->d_status, users, antennas, alpha, kTinyF32);
+    // Catch (and clear) launch-configuration errors immediately, before more work
+    // is enqueued; execution errors still surface at the synchronize below.
+    cudaError_t launch_err = cudaGetLastError();
+    if (launch_err != cudaSuccess) { set_err(c, cudaGetErrorString(launch_err)); return C2K_RZF_CALL_EDEVICE; }
     cudaEventRecord(c->ev_kernel, c->stream);
 
     cudaMemcpyAsync(c->p_W, c->d_W, w_bytes, cudaMemcpyDeviceToHost, c->stream);

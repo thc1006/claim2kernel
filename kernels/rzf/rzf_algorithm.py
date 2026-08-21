@@ -79,9 +79,14 @@ def rzf_precoder_cholesky(
     ``W[b]`` is all zeros -- a rejected element never leaks NaN/Inf or an
     unnormalized precoder downstream.
 
-    ``deterministic`` selects a fixed left-to-right accumulation order for the
-    Gram and the triangular solves, matching the GPU deterministic mode. It is
-    accepted for parity; this CPU mirror is deterministic in both settings.
+    ``deterministic`` (default) makes the Gram accumulate strictly left-to-right
+    (``np.add.accumulate``) -- the same summation ORDER the CUDA/Mojo kernels use;
+    the triangular solves are explicit left-to-right loops already. With
+    ``deterministic=False`` the Gram uses numpy's pairwise sum instead. Either way
+    the result is deterministic on a given host; matching the GPU's *order* does
+    not make the output bit-identical to the GPU (platform FP still differs). The
+    Frobenius reduction uses numpy's sum (a reduction, like the GPU's tree
+    reduction) and is independent of this flag.
     """
     h_in = np.asarray(channel)
     if h_in.ndim != 3:
@@ -139,7 +144,10 @@ def _gram(hb: np.ndarray, cdt: np.dtype, deterministic: bool) -> np.ndarray:
         row = hb[i, :]
         for j in range(users):
             prod = (row * np.conj(hb[j, :])).astype(cdt)
-            gram[i, j] = prod.sum(dtype=cdt)
+            # Strict left-to-right accumulation (matches the GPU's per-(i,j)
+            # order) when deterministic; numpy's pairwise sum otherwise.
+            gram[i, j] = (np.add.accumulate(prod, dtype=cdt)[-1] if deterministic
+                          else prod.sum(dtype=cdt))
     return gram
 
 

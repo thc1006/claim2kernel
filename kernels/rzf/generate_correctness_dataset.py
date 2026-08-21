@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 """Generate the deterministic RZF correctness dataset that is digest-bound.
 
-The dataset is the frozen set of channel shapes/seeds plus the complex128 oracle
-outcome for each. Its SHA-256 is written into the Claim2Kernel profile as
-`provenance.datasetDigest`, so the correctness evidence a profile refers to is
-pinned. Rows are fully deterministic (fixed seeds, sorted keys, no timestamps,
-no NaN) so the digest is reproducible on any host.
+The dataset is the frozen set of channel shapes/seeds plus each case's expected
+per-batch status and the FP32-vs-complex128 agreement. Its SHA-256 is written
+into the Claim2Kernel profile as `provenance.datasetDigest`, pinning the
+correctness evidence a profile refers to.
 
-This is NOT hardware performance data. It records reference outputs and the
+The recorded values are portable across hosts and BLAS builds: exact case
+parameters, numpy's platform-stable Generator stream (fixed seeds), the
+deterministic per-batch status, and the agreement rounded to 3 significant
+figures. It deliberately does NOT hash raw BLAS/LAPACK output bytes -- those are
+not bit-stable across CPU/BLAS builds and would make the digest host-dependent.
+Sorted keys, no timestamps, no NaN.
+
+This is NOT hardware performance data. It records reference case metadata and the
 FP32-vs-complex128 agreement only.
 """
 from __future__ import annotations
@@ -55,15 +61,17 @@ def main() -> None:
         h = _channel(b, u, n, seed)
         ref = rzf_precoder(h, alpha, np.complex128)
         w64, status = rzf_precoder_cholesky(h, alpha, np.complex64)
-        # Hash the canonical complex128 reference bytes (C-order, little-endian).
-        ref_bytes = np.ascontiguousarray(ref, dtype="<c16").tobytes()
+        rel = metrics(ref, w64, h)["relativeL2"]
         rows.append({
             "name": name, "batch": b, "users": u, "antennas": n,
             "seed": seed, "alpha": alpha,
             "expectedWorstStatus": int(want),
             "statusObserved": [int(x) for x in status],
-            "referenceSHA256": hashlib.sha256(ref_bytes).hexdigest(),
-            "relativeL2Complex64": float(metrics(ref, w64, h)["relativeL2"]),
+            # Rounded on purpose: raw BLAS-derived bytes are not bit-stable across
+            # CPU/BLAS builds, so hashing them would make the digest host-specific.
+            # The case parameters + deterministic status fully pin the reference;
+            # this records the FP32 agreement portably.
+            "relativeL2Complex64Rounded": float(f"{rel:.3g}"),
         })
 
     dataset = {
